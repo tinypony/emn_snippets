@@ -1,9 +1,10 @@
 package edu.aalto.emn;
 
+import org.json.JSONObject;
 import org.xml.sax.Attributes;
 
 
-public class BusStop {
+public class BusStop{
     private String id;
     private String name;
     private String x;
