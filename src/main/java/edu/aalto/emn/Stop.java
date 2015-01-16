@@ -5,7 +5,9 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.xml.sax.Attributes;
 
-public class Stop implements Jsonable {
+import com.mongodb.BasicDBObject;
+
+public class Stop implements Jsonable, Mongoable {
 	private BusStop stop;
 	private int order;
 	private String arrival;
@@ -58,5 +60,16 @@ public class Stop implements Jsonable {
 
 	public void setArrival(String arrival) {
 		this.arrival = arrival;
+	}
+
+	@Override
+	public BasicDBObject toMongoObj() {
+		BasicDBObject jstop = new BasicDBObject();
+		jstop.append("id", this.getStop().getId())
+		.append("time", this.getArrival())
+		.append("name", this.getStop().getName())
+		.append("posX", this.getStop().getX())
+		.append("posY", this.getStop().getY());
+		return jstop;
 	}
 }

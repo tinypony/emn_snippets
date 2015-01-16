@@ -1,11 +1,14 @@
 package edu.aalto.emn;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class Bus implements Jsonable {
+import com.mongodb.BasicDBObject;
+
+public class Bus implements Jsonable, Mongoable {
 
 	private String serviceID;
 	private String serviceNbr;
@@ -82,5 +85,25 @@ public class Bus implements Jsonable {
 
 	public void setTrnsmode(String trnsmode) {
 		this.trnsmode = trnsmode;
+	}
+
+	@Override
+	public BasicDBObject toMongoObj() {
+		BasicDBObject obj = new BasicDBObject();
+    	obj.append("serviceId", this.getServiceID())
+    	.append("companyId", this.getCompany())
+    	.append("serviceNbr", this.getServiceNbr())
+    	.append("route", this.getRoute())
+    	.append("stops", this.getDBStops());
+    	    	
+    	return obj;
+	}
+
+	private List<BasicDBObject> getDBStops() {
+		ArrayList<BasicDBObject> stops = new ArrayList<BasicDBObject>();
+		for(Stop stop: this.getStops()) {
+			stops.add(stop.toMongoObj());
+		}
+		return stops;
 	}
 }
