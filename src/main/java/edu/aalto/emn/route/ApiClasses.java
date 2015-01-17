@@ -53,6 +53,10 @@ public class ApiClasses {
 			
 			return retval;
 		}
+		
+		public String getStatus() {
+			return this.status;
+		}
 	}
 
 	public static class MatrixRow {

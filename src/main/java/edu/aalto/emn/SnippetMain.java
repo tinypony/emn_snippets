@@ -22,8 +22,10 @@ import com.beust.jcommander.Parameter;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.WriteResult;
 
 import edu.aalto.emn.route.DistanceRetriever;
 
@@ -48,12 +50,16 @@ public class SnippetMain {
     	this.db = mongoClient.getDB( "hsl" );
 	}
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
     	SnippetMain snippet = new SnippetMain();
     	new JCommander(snippet, args);
-        
-    	  List<String> routes = snippet.getDistinctRoutes(); 
-    	  snippet.retrieveRouteLength(routes.subList(0, 1));
+
+    	//DBCollection coll = snippet.db.getCollection("buses");
+		List<String> routes = snippet.getDistinctRoutes();
+		
+
+	//	System.out.println("Entries affected: " + result.getN());
+        snippet.retrieveRouteLength(routes.subList(0, 1));
       
 //        try {
 //            InputStream xmlInput = new FileInputStream(snippet.path);
@@ -64,23 +70,30 @@ public class SnippetMain {
         System.out.println("Done");
     }
     
-    public void retrieveRouteLength(List<String> routes) throws IOException {
-    	DBCollection coll = db.getCollection("buses");
+    public void retrieveRouteLength(List<String> routes) throws IOException, InterruptedException {
+    	DBCollection coll = this.db.getCollection("buses");
     	Iterator<String> iter = routes.iterator();
+    	float i = 0;
     	
     	while(iter.hasNext()) {
     		String routeCode = iter.next();
     		DBObject bus = this.getBus(routeCode);
+    		System.out.println(routeCode);
     		System.out.println(bus);
     		
-    		if(bus.get("routeLength") == null) {
+    		if(bus.get("routeLength") == null || (Integer) bus.get("routeLength") == 0) {
       	  		int lengthInMeters = DistanceRetriever.getRouteLength(bus);
       	  		System.out.println("Route:"+routeCode + ", length:"+lengthInMeters);
       	  		
-      	  		BasicDBObject query = new BasicDBObject("serviceNbr", route);
-      	  		BasicDBObject update = new BasicDBObject("routeLength", lengthInMeters);
-      	  		coll.findAndModify(query, update);
+      			BasicDBObject query = new BasicDBObject("serviceNbr", route);
+      			BasicDBObject update = new BasicDBObject("$set", new BasicDBObject(
+      					"routeLength", lengthInMeters));
+      			WriteResult result = coll.update(query, update, false, true);
+      	  		System.out.println("Entries affected: "+result.getN());
     		}
+    		
+    		i += 1.0;
+    		System.out.print("Done "+i+"/"+routes.size()+ "(" + (i/routes.size())*100 + "%)            \r");
     	}
     }
     
