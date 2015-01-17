@@ -29,46 +29,60 @@ public class ApiClasses {
 
 	}
 
-	public class DestinationAPIResponse {
+	public static class DestinationAPIResponse {
 		@Key
 		private String status;
 
 		@Key
-		private String origin_addresses;
+		private List<String> origin_addresses;
 
 		@Key
-		private String destination_addresses;
+		private List<String> destination_addresses;
 
 		@Key
 		private ArrayList<MatrixRow> rows;
 		
-		public float calculateTotalDistance() {
-			return 0.0f;
+		public DestinationAPIResponse(){};
+		
+		public int calculateTotalDistance() {
+			int retval= 0;
+			
+			for(int i=0; i< rows.size(); i++) {
+				retval += this.rows.get(i).getElements().get(i).distance.value;
+			}
+			
+			return retval;
 		}
 	}
 
-	public class MatrixRow {
+	public static class MatrixRow {
 		@Key
 		private ArrayList<MatrixElement> elements;
 
+		public MatrixRow(){};
+		
 		public List<MatrixElement> getElements() {
 			return this.elements;
 		}
 	}
 
-	public class MatrixElement {
+	public static class MatrixElement {
 		@Key
 		private IntTextPair duration;
 
 		@Key
 		private IntTextPair distance;
+		
+		public MatrixElement(){};
 	}
 
-	public class IntTextPair {
+	public static class IntTextPair {
 		@Key
 		private Integer value;
 
 		@Key
 		private String text;
+		
+		public IntTextPair(){};
 	}
 }

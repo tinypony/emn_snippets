@@ -10,10 +10,6 @@ public class BusStop{
     private String x;
     private String y;
     
-    public BusStop() {
-        
-    }
-    
     public BusStop(Attributes atts) {
         String name = atts.getValue("Name");
         String id = atts.getValue("StationId");

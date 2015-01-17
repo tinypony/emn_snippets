@@ -41,12 +41,12 @@ public class DBHandler extends DefaultHandler {
 		String type = atts.getValue("type");
 		String isVirtual = atts.getValue("isVirtual");
 
+
 		if (type == null && isVirtual == null) {
 			return true;
 		}
 
-		return (type != null && "0".equals(type))
-				|| (isVirtual != null && "false".equals(isVirtual));
+		return (type != null && "0".equals(type)) || (isVirtual != null && "false".equals(isVirtual));
 	}
 
 	@Override
@@ -56,12 +56,10 @@ public class DBHandler extends DefaultHandler {
 		this.elementStack.push(qName);
 
 		if ("station".equals(qName.toLowerCase())) {
-			if (isReal(attributes)) {
+			if (isReal(attributes) && attributes.getValue("X") != null && attributes.getValue("Y") != null) {
 				BusStop stop = new BusStop(attributes);
 				this.objectStack.push(stop);
 				this.stops.put(stop.getId(), stop);
-			} else {
-				this.elementStack.pop();
 			}
 		} else if ("service".equals(qName.toLowerCase())) {
 			Bus bus = new Bus();

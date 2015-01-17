@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -21,7 +22,10 @@ import com.beust.jcommander.Parameter;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+
+import edu.aalto.emn.route.DistanceRetriever;
 
 public class SnippetMain {
     
@@ -35,30 +39,49 @@ public class SnippetMain {
     
     @Parameter(names = "-out", required = true)
     private String out;
+    
+	private MongoClient mongoClient;
+	private DB db;
+	
+	public SnippetMain() throws UnknownHostException {
+    	this.mongoClient = new MongoClient( "localhost" );
+    	this.db = mongoClient.getDB( "hsl" );
+	}
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) throws IOException {
     	SnippetMain snippet = new SnippetMain();
     	new JCommander(snippet, args);
         
-    	System.out.println("Got " + snippet.getDistinctRoutes().size() + " distinct routes");
-      /*  
-        try {
-            InputStream xmlInput = new FileInputStream(snippet.path);
-            //snippet.dumpData(snippet.parse(xmlInput).getBuses());
-            
-//            File outfile = new File(snippet.out);
-//            outfile.createNewFile();
-//            PrintWriter writer = new PrintWriter(outfile);
-//            writer.print("");
-//            writer.close();
-//            
-//            writer = new PrintWriter(outfile);
-//            writer.print(db.toString());
-//            writer.close();
-//            System.out.println("Done!");
-        } catch (Throwable err) {
-            err.printStackTrace ();
-        } */
+    	  List<String> routes = snippet.getDistinctRoutes(); 
+    	  snippet.retrieveRouteLength(routes.subList(0, 1));
+      
+//        try {
+//            InputStream xmlInput = new FileInputStream(snippet.path);
+//            snippet.dumpData(snippet.parse(xmlInput).getBuses());
+//        } catch (Throwable err) {
+//            err.printStackTrace ();
+//        }
+        System.out.println("Done");
+    }
+    
+    public void retrieveRouteLength(List<String> routes) throws IOException {
+    	DBCollection coll = db.getCollection("buses");
+    	Iterator<String> iter = routes.iterator();
+    	
+    	while(iter.hasNext()) {
+    		String routeCode = iter.next();
+    		DBObject bus = this.getBus(routeCode);
+    		System.out.println(bus);
+    		
+    		if(bus.get("routeLength") == null) {
+      	  		int lengthInMeters = DistanceRetriever.getRouteLength(bus);
+      	  		System.out.println("Route:"+routeCode + ", length:"+lengthInMeters);
+      	  		
+      	  		BasicDBObject query = new BasicDBObject("serviceNbr", route);
+      	  		BasicDBObject update = new BasicDBObject("routeLength", lengthInMeters);
+      	  		coll.findAndModify(query, update);
+    		}
+    	}
     }
     
     public DBHandler parse(InputStream xmlInput) throws ParserConfigurationException, SAXException, IOException {
@@ -73,19 +96,26 @@ public class SnippetMain {
     }
     
     public void dumpData(List<Bus> buses) throws UnknownHostException {
-    	MongoClient mongoClient = new MongoClient( "localhost" );
-    	DB db = mongoClient.getDB( "hsl" );
     	DBCollection coll = db.getCollection("buses");
+    	coll.drop();
+    	coll = db.getCollection("buses");
+    	
     	for(Bus bus : buses) {
         	coll.insert(bus.toMongoObj());
     	}
     }
     
-    public List<BasicDBObject> getDistinctRoutes() throws UnknownHostException {
-    	MongoClient mongoClient = new MongoClient( "localhost" );
-    	DB db = mongoClient.getDB( "hsl" );
+    public List<String> getDistinctRoutes() throws UnknownHostException {
     	DBCollection coll = db.getCollection("buses");
     	return coll.distinct("serviceNbr");
+    }
+    
+    public DBObject getBus(String route) {
+    	DBCollection coll = db.getCollection("buses");
+    	BasicDBObject query = new BasicDBObject();
+    	query.append("serviceNbr", route);
+    	DBObject bus = coll.findOne(query);
+    	return bus;
     }
 
 }
