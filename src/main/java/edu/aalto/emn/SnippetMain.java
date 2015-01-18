@@ -42,24 +42,17 @@ public class SnippetMain {
     @Parameter(names = "-out", required = true)
     private String out;
     
-	private MongoClient mongoClient;
-	private DB db;
 	
 	public SnippetMain() throws UnknownHostException {
-    	this.mongoClient = new MongoClient( "localhost" );
-    	this.db = mongoClient.getDB( "hsl" );
+
 	}
 
     public static void main(String[] args) throws IOException, InterruptedException {
     	SnippetMain snippet = new SnippetMain();
     	new JCommander(snippet, args);
 
-    	//DBCollection coll = snippet.db.getCollection("buses");
 		List<String> routes = snippet.getDistinctRoutes();
-		
-
-	//	System.out.println("Entries affected: " + result.getN());
-        snippet.retrieveRouteLength(routes.subList(0, 1));
+		snippet.retrieveRouteLength(routes);
       
 //        try {
 //            InputStream xmlInput = new FileInputStream(snippet.path);
@@ -70,26 +63,56 @@ public class SnippetMain {
         System.out.println("Done");
     }
     
+    public void printTestLength(String routeId) {
+    	try {
+    		DBObject bus = this.getBus(routeId);
+    		System.out.println("Length:"+bus.get("routeLength"));
+    		
+  			BasicDBObject query = new BasicDBObject("serviceNbr", routeId);
+  			BasicDBObject update = new BasicDBObject("$set", 
+  					new BasicDBObject("routeLength", 0)
+  			);
+  			
+  			WriteResult result = MongoUtils.getDB()
+  					.getCollection("buses")
+  					.update(query, update, false, true);
+  	  		System.out.println("Entries affected: " + result.getN());
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
     public void retrieveRouteLength(List<String> routes) throws IOException, InterruptedException {
-    	DBCollection coll = this.db.getCollection("buses");
+    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
     	Iterator<String> iter = routes.iterator();
     	float i = 0;
     	
     	while(iter.hasNext()) {
     		String routeCode = iter.next();
     		DBObject bus = this.getBus(routeCode);
-    		System.out.println(routeCode);
-    		System.out.println(bus);
+    		//System.out.println(routeCode);
+    		//System.out.println(bus);
     		
+    		//Skip already processed routes
     		if(bus.get("routeLength") == null || (Integer) bus.get("routeLength") == 0) {
-      	  		int lengthInMeters = DistanceRetriever.getRouteLength(bus);
-      	  		System.out.println("Route:"+routeCode + ", length:"+lengthInMeters);
+    			
+    			int lengthInMeters;
+    			
+    			try {
+      	  			lengthInMeters = DistanceRetriever.getRouteLength(bus);
+    			} catch(IllegalStateException e) { //results from exceeding google api request quota, try to use hashed distances instead
+    				continue;
+    			}
+    			
+      	  		System.out.println("Route:" + routeCode + ", length:" + lengthInMeters);
       	  		
-      			BasicDBObject query = new BasicDBObject("serviceNbr", route);
-      			BasicDBObject update = new BasicDBObject("$set", new BasicDBObject(
-      					"routeLength", lengthInMeters));
+      			BasicDBObject query = new BasicDBObject("serviceNbr", routeCode);
+      			BasicDBObject update = new BasicDBObject("$set", 
+      					new BasicDBObject("routeLength", lengthInMeters)
+      			);
       			WriteResult result = coll.update(query, update, false, true);
-      	  		System.out.println("Entries affected: "+result.getN());
+      	  		System.out.println("Entries affected: " + result.getN());
     		}
     		
     		i += 1.0;
@@ -109,9 +132,9 @@ public class SnippetMain {
     }
     
     public void dumpData(List<Bus> buses) throws UnknownHostException {
-    	DBCollection coll = db.getCollection("buses");
+    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
     	coll.drop();
-    	coll = db.getCollection("buses");
+    	coll = MongoUtils.getDB().getCollection("buses");
     	
     	for(Bus bus : buses) {
         	coll.insert(bus.toMongoObj());
@@ -119,12 +142,12 @@ public class SnippetMain {
     }
     
     public List<String> getDistinctRoutes() throws UnknownHostException {
-    	DBCollection coll = db.getCollection("buses");
+    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
     	return coll.distinct("serviceNbr");
     }
     
-    public DBObject getBus(String route) {
-    	DBCollection coll = db.getCollection("buses");
+    public DBObject getBus(String route) throws UnknownHostException {
+    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
     	BasicDBObject query = new BasicDBObject();
     	query.append("serviceNbr", route);
     	DBObject bus = coll.findOne(query);
