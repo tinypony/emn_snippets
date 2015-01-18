@@ -26,6 +26,8 @@ public class DistanceRetriever {
 	static final int MAX_MATRIX_SIDE = 2;
 	static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	static final JsonFactory JSON_FACTORY = new JacksonFactory();
+	static boolean quotaAvailable = true;
+	
 	static final HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(new HttpRequestInitializer() {
 				@Override
 				public void initialize(HttpRequest request) {
@@ -46,7 +48,6 @@ public class DistanceRetriever {
 		}
 		
 		String retval = sb.toString();
-		//System.out.println("Origins = "+retval);
 		return retval;
 	}
 	
@@ -55,7 +56,6 @@ public class DistanceRetriever {
 		
 		for(int i=1; i<stops.size(); i++) {
 			DBObject stop = stops.get(i);
-		//	System.out.println(stop);
 			if(i == 1) {
 				sb.append(stop.get("posY")+","+stop.get("posX"));
 			} else {
@@ -63,7 +63,6 @@ public class DistanceRetriever {
 			}			
 		}
 		String retval = sb.toString();
-		//System.out.println("Destinations = "+retval);
 		return retval;
 	}
 	
@@ -73,7 +72,6 @@ public class DistanceRetriever {
 		url.put("fields", "items(id,url,object(content,plusoners/totalItems))");
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse response = request.execute();
-	//	System.out.println(response.parseAsString());
 		ApiClasses.DestinationAPIResponse apiResponse = response.parseAs(ApiClasses.DestinationAPIResponse.class);
 		if(apiResponse.getStatus().equals("OVER_QUERY_LIMIT")) {
 			throw new IllegalStateException("Too much queries");
@@ -90,58 +88,44 @@ public class DistanceRetriever {
 		
 		if(result != null) {
 			return (Integer) result.get("distance");
-		} else {
+		} else if(quotaAvailable) {
 			try {
 				Thread.sleep(300);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			int retval = getRoutePartLengthOnline(Arrays.asList(a,b));
 			
-			BasicDBObject newEntry = new BasicDBObject();
-			newEntry.append("from", a.get("id"))
-				.append("to", b.get("id"))
-				.append("distance", retval);
-			distances.insert(newEntry);
-			return retval;
+			try {
+				int retval = getRoutePartLengthOnline(Arrays.asList(a,b));
+				
+				BasicDBObject newEntry = new BasicDBObject();
+				newEntry.append("from", a.get("id"))
+					.append("to", b.get("id"))
+					.append("distance", retval);
+				distances.insert(newEntry);
+
+				return retval;
+			} catch(IllegalStateException e) {
+				quotaAvailable = false;
+				throw e;
+			}
+		} else {
+			throw new IllegalStateException("Quota exceeded");
 		}
 	}
 
 	public static int getRouteLength(DBObject bus) throws IOException, InterruptedException, IllegalStateException {
 		List<DBObject> stopsTotal = (List<DBObject>) bus.get("stops");
-		boolean hasMore = true;
 		int tmpVal = 0;
-		int retval = 0, i = 0;
+		int retval = 0;
 		
 		for(int j=0; j<stopsTotal.size()-1; j++) {
 			DBObject busStopA = stopsTotal.get(j);
 			DBObject busStopB = stopsTotal.get(j+1);
 			
 			tmpVal = getDistanceBetweenStops(busStopA, busStopB);
-			System.out.println(String.format("Distance %d->%d = %d", 
-					Integer.parseInt((String) busStopA.get("id")), 
-					Integer.parseInt((String) busStopB.get("id")), 
-					tmpVal));
 			retval += tmpVal;
 		}
-		/*
-		while(hasMore) {
-			List<DBObject> stopsSubList;
-			if(i + MAX_MATRIX_SIDE + 1 < stopsTotal.size()) {
-				stopsSubList = stopsTotal.subList(i, i+MAX_MATRIX_SIDE + 1);
-			} else {
-				stopsSubList = stopsTotal.subList(i, stopsTotal.size());
-				hasMore = false;
-			}
-			
-			retval += getRoutePartLength(stopsSubList);
-			if(hasMore) {
-				Thread.sleep(2000);
-			}
-			i += MAX_MATRIX_SIDE;
-		}*/
-		//System.out.println("Total length = "+retval);
 		return retval;
 	}
 }

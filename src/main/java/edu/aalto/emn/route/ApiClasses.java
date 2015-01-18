@@ -8,7 +8,7 @@ import com.google.api.client.util.Key;
 
 public class ApiClasses {
 
-	static final String API_KEY = "AIzaSyCx3auvl9pVjodHKFHIkZcgpwe7PWcHGio";
+	static final String API_KEY = "AIzaSyBemqldbHJLIVQzv1QhkhQyrqCyAhOeOxI";//"AIzaSyCx3auvl9pVjodHKFHIkZcgpwe7PWcHGio";
 
 	public static class DistanceUrl extends GenericUrl {
 		public DistanceUrl(String encodedUrl) {

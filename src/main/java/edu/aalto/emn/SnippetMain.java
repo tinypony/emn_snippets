@@ -91,8 +91,6 @@ public class SnippetMain {
     	while(iter.hasNext()) {
     		String routeCode = iter.next();
     		DBObject bus = this.getBus(routeCode);
-    		//System.out.println(routeCode);
-    		//System.out.println(bus);
     		
     		//Skip already processed routes
     		if(bus.get("routeLength") == null || (Integer) bus.get("routeLength") == 0) {
