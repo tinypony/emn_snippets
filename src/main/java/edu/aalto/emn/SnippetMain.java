@@ -51,40 +51,23 @@ public class SnippetMain {
     	SnippetMain snippet = new SnippetMain();
     	new JCommander(snippet, args);
 
-		List<String> routes = snippet.getDistinctRoutes();
-		snippet.retrieveRouteLength(routes);
-      
-//        try {
-//            InputStream xmlInput = new FileInputStream(snippet.path);
-//            snippet.dumpData(snippet.parse(xmlInput).getBuses());
-//        } catch (Throwable err) {
-//            err.printStackTrace ();
-//        }
+    	System.out.println();
+		snippet.retrieveRouteLength();
+    /*  
+        try {
+            InputStream xmlInput = new FileInputStream(snippet.path);
+            snippet.parseUpdate(xmlInput);
+           // snippet.dumpData(snippet.parse(xmlInput).getBuses());
+        } catch (Throwable err) {
+            err.printStackTrace ();
+        }
+      */  
         System.out.println("Done");
     }
     
-    public void printTestLength(String routeId) {
-    	try {
-    		DBObject bus = this.getBus(routeId);
-    		System.out.println("Length:"+bus.get("routeLength"));
-    		
-  			BasicDBObject query = new BasicDBObject("serviceNbr", routeId);
-  			BasicDBObject update = new BasicDBObject("$set", 
-  					new BasicDBObject("routeLength", 0)
-  			);
-  			
-  			WriteResult result = MongoUtils.getDB()
-  					.getCollection("buses")
-  					.update(query, update, false, true);
-  	  		System.out.println("Entries affected: " + result.getN());
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    }
-    
-    public void retrieveRouteLength(List<String> routes) throws IOException, InterruptedException {
+    public void retrieveRouteLength() throws IOException, InterruptedException {
     	DBCollection coll = MongoUtils.getDB().getCollection("buses");
+		List<String> routes = this.getDistinctRoutes();
     	Iterator<String> iter = routes.iterator();
     	float i = 0;
     	
@@ -126,6 +109,15 @@ public class SnippetMain {
         saxParser.parse(xmlInput, handler);
         System.out.println("Got " + handler.getStops().keySet().size() + " stops");
         System.out.println("Got " + handler.getBuses().size() + " buses");
+        return handler;
+    }
+    
+    public UpdateDBHandler parseUpdate(InputStream xmlInput) throws ParserConfigurationException, SAXException, IOException {
+
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+    	SAXParser saxParser = factory.newSAXParser();
+        UpdateDBHandler handler   = new UpdateDBHandler();
+        saxParser.parse(xmlInput, handler);
         return handler;
     }
     
