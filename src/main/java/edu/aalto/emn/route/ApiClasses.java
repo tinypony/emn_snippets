@@ -16,7 +16,7 @@ public class ApiClasses {
 		}
 
 		/**
-		 * Lists the public activities for the given Google+ user ID.
+		 * Constructs url to google distance api
 		 * 
 		 * @return
 		 */
@@ -29,6 +29,12 @@ public class ApiClasses {
 
 	}
 
+	/**
+	 * Google distance api response
+	 * 
+	 * @author tinypony
+	 *
+	 */
 	public static class DestinationAPIResponse {
 		@Key
 		private String status;

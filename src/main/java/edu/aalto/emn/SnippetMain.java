@@ -51,17 +51,18 @@ public class SnippetMain {
     	SnippetMain snippet = new SnippetMain();
     	new JCommander(snippet, args);
 
-    	System.out.println();
-		snippet.retrieveRouteLength();
-    /*  
+
+    
         try {
             InputStream xmlInput = new FileInputStream(snippet.path);
-            snippet.parseUpdate(xmlInput);
-           // snippet.dumpData(snippet.parse(xmlInput).getBuses());
+            snippet.dumpData(snippet.parse(xmlInput).getBuses());
         } catch (Throwable err) {
             err.printStackTrace ();
         }
-      */  
+      
+    	
+    	System.out.println();
+		snippet.retrieveRouteLength();
         System.out.println("Done");
     }
     

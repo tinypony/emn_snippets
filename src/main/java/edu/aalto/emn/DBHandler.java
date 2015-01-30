@@ -1,5 +1,6 @@
 package edu.aalto.emn;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,22 +12,24 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.mongodb.BasicDBObject;
+
 public class DBHandler extends DefaultHandler {
 	private Map<String, BusStop> stops;
 	private ArrayList<Bus> buses;
 
+	private Map<String, BasicDBObject> validityDays;
 	private List<String> allowedModes = Arrays.asList("1", "3", "4", "5", "25");
-	private String route, company;
 
+	private String deliveryStart = "";
 	private Stack<String> elementStack = new Stack<String>();
 	private Stack<Object> objectStack = new Stack<Object>();
 	
 
 	public DBHandler(String route, String company) {
-		this.route = route;
-		this.company = company;
 		this.stops = new HashMap<String, BusStop>();
 		this.buses = new ArrayList<Bus>();
+		this.validityDays = new HashMap<String, BasicDBObject>();
 	}
 
 	public List<Bus> getBuses() {
@@ -55,13 +58,31 @@ public class DBHandler extends DefaultHandler {
 		String qNameLow = qName.toLowerCase();
 		this.elementStack.push(qName);
 
-		if ("station".equals(qName.toLowerCase())) {
+		if("footnote".equalsIgnoreCase(qName)) {
+			BasicDBObject footnote = new BasicDBObject();
+			footnote.append("vector", attributes.getValue("Vector"));
+			
+			if(attributes.getValue("Firstdate") != null) {
+				footnote.append("firstDate", attributes.getValue("Firstdate"));
+			} else {
+				footnote.append("firstDate", deliveryStart);
+			}
+			
+			validityDays.put(attributes.getValue("FootnoteId"), footnote);
+			
+		} else if("delivery".equalsIgnoreCase(qName)) {
+			deliveryStart = attributes.getValue("Firstday");
+			
+		} else if ("station".equals(qName.toLowerCase())) {
+			
 			if (isReal(attributes) && attributes.getValue("X") != null && attributes.getValue("Y") != null) {
 				BusStop stop = new BusStop(attributes);
 				this.objectStack.push(stop);
 				this.stops.put(stop.getId(), stop);
 			}
+			
 		} else if ("service".equals(qName.toLowerCase())) {
+			
 			Bus bus = new Bus();
 			bus.setServiceID(attributes.getValue("ServiceId"));
 			this.objectStack.push(bus);
@@ -88,9 +109,18 @@ public class DBHandler extends DefaultHandler {
 			} catch(Exception e) {
 				System.out.println("Error parsing stop");
 			}
+			
 		} else if ("servicetrnsmode".equals(qNameLow)) {
 			Bus bus = (Bus) this.objectStack.peek();
 			bus.setTrnsmode(attributes.getValue("TrnsmodeId"));
+			
+		} else if("servicevalidity".equalsIgnoreCase(qName)) {
+			Bus bus = (Bus) objectStack.peek();
+			String footnoteid = attributes.getValue("FootnoteId");
+			bus.setFootnoteId (footnoteid);
+			BasicDBObject validity = validityDays.get(footnoteid);
+			bus.setFirstDate(validity.getString("firstDate"));
+			bus.setVector(validity.getString("vector"));
 		}
 	}
 
@@ -109,6 +139,9 @@ public class DBHandler extends DefaultHandler {
 		}
 	}
 	
+	public Map<String, BasicDBObject> getValidityDays() {
+		return this.validityDays;
+	}
 
 	private boolean filter(Bus bus) {
 		return allowedModes.contains(bus.getTrnsmode()); //bus.getRoute().equals(this.route) && this.company.equals(bus.getCompany());

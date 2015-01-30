@@ -1,11 +1,15 @@
 package edu.aalto.emn;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.beust.jcommander.converters.ISO8601DateConverter;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 
 public class Bus implements Jsonable, Mongoable {
@@ -16,6 +20,9 @@ public class Bus implements Jsonable, Mongoable {
     private String route;
 	private String companyId;
 	private String trnsmode;
+	private String footnoteId;
+	private String firstDate;
+	private String vector;
 
     public Bus() {
         this.stops = new ArrayList<Stop>();
@@ -89,13 +96,41 @@ public class Bus implements Jsonable, Mongoable {
 
 	@Override
 	public BasicDBObject toMongoObj() {
+		BasicDBObject val = new BasicDBObject();
+		val.append("firstDate", this.getFirstDate());
+		val.append("vector", this.getVector());
+		
+		BasicDBList dates = new BasicDBList();
+		Calendar cal = Calendar.getInstance();
+		String[] tokens = firstDate.split("-");
+		
+		cal.set(Integer.parseInt(tokens[0]), 
+				Integer.parseInt(tokens[1])-1, 
+				Integer.parseInt(tokens[2])-1);
+		
+		
+		for(int i =0; i < this.getVector().length(); i++) {
+			char a = this.getVector().charAt(i);
+			if(a == '1') {
+				cal.set(Integer.parseInt(tokens[0]), 
+						Integer.parseInt(tokens[1])-1, 
+						Integer.parseInt(tokens[2]));
+				cal.add(Calendar.DATE, i);
+				dates.add(cal.getTime());
+			}
+		}
+		
+		val.append("dates", dates);
+		
 		BasicDBObject obj = new BasicDBObject();
     	obj.append("serviceId", this.getServiceID())
     	.append("companyId", this.getCompany())
     	.append("serviceNbr", this.getServiceNbr())
     	.append("route", this.getRoute())
-    	.append("stops", this.getDBStops());
-    	    	
+    	.append("stops", this.getDBStops())
+    	.append("footnodeId", this.getFootnoteId())
+    	.append("validity", val);
+    	
     	return obj;
 	}
 
@@ -105,5 +140,29 @@ public class Bus implements Jsonable, Mongoable {
 			stops.add(stop.toMongoObj());
 		}
 		return stops;
+	}
+
+	public String getFootnoteId() {
+		return footnoteId;
+	}
+
+	public void setFootnoteId(String footnoteId) {
+		this.footnoteId = footnoteId;
+	}
+
+	public String getFirstDate() {
+		return firstDate;
+	}
+
+	public void setFirstDate(String firstDate) {
+		this.firstDate = firstDate;
+	}
+
+	public String getVector() {
+		return vector;
+	}
+
+	public void setVector(String vector) {
+		this.vector = vector;
 	}
 }
