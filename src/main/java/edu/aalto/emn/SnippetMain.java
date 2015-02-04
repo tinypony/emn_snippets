@@ -113,14 +113,6 @@ public class SnippetMain {
         return handler;
     }
     
-    public UpdateDBHandler parseUpdate(InputStream xmlInput) throws ParserConfigurationException, SAXException, IOException {
-
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-    	SAXParser saxParser = factory.newSAXParser();
-        UpdateDBHandler handler   = new UpdateDBHandler();
-        saxParser.parse(xmlInput, handler);
-        return handler;
-    }
     
     public void dumpData(List<Bus> buses) throws UnknownHostException {
     	DBCollection coll = MongoUtils.getDB().getCollection("buses");

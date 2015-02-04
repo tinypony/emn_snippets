@@ -116,11 +116,13 @@ public class Bus implements Jsonable, Mongoable {
 						Integer.parseInt(tokens[1])-1, 
 						Integer.parseInt(tokens[2]));
 				cal.add(Calendar.DATE, i);
-				dates.add(cal.getTime());
+				dates.add(cal.get(Calendar.YEAR) + "-" 
+				+ (cal.get(Calendar.MONTH)+1) + "-" 
+				+ cal.get(Calendar.DATE));
 			}
 		}
 		
-		val.append("dates", dates);
+		//val.append("dates", dates);
 		
 		BasicDBObject obj = new BasicDBObject();
     	obj.append("serviceId", this.getServiceID())
@@ -129,7 +131,7 @@ public class Bus implements Jsonable, Mongoable {
     	.append("route", this.getRoute())
     	.append("stops", this.getDBStops())
     	.append("footnodeId", this.getFootnoteId())
-    	.append("validity", val);
+    	.append("dates", dates);
     	
     	return obj;
 	}
