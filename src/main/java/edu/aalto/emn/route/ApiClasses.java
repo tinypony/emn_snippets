@@ -10,7 +10,8 @@ public class ApiClasses {
 
 	// "AIzaSyCx3auvl9pVjodHKFHIkZcgpwe7PWcHGio"
 	// "AIzaSyBemqldbHJLIVQzv1QhkhQyrqCyAhOeOxI"
-	static final String API_KEY = "AIzaSyBemqldbHJLIVQzv1QhkhQyrqCyAhOeOxI";
+	// "AIzaSyB1wN4vcljzgFhxtk8NFDpYCbzEMAmCrW0"
+	static final String API_KEY = "AIzaSyB1wN4vcljzgFhxtk8NFDpYCbzEMAmCrW0";
 
 	public static class DistanceUrl extends GenericUrl {
 		public DistanceUrl(String encodedUrl) {
