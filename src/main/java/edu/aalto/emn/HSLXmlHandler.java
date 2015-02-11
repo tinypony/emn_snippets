@@ -13,7 +13,7 @@ import org.xml.sax.SAXException;
 
 import com.mongodb.DBCollection;
 
-import edu.aalto.emn.dataobject.Bus;
+import edu.aalto.emn.dataobject.BusTrip;
 
 public class HSLXmlHandler {
 
@@ -29,13 +29,17 @@ public class HSLXmlHandler {
     }
     
     
-    public void dumpData(List<Bus> buses) throws UnknownHostException {
+    public void dumpData(List<BusTrip> buses) throws UnknownHostException {
         DBCollection coll = MongoUtils.getDB().getCollection("buses");
         coll.drop();
         coll = MongoUtils.getDB().getCollection("buses");
         
-        for(Bus bus : buses) {
+        for(BusTrip bus : buses) {
             coll.insert(bus.toMongoObj());
         }
+    }
+    
+    public void parseAndDump(InputStream input) throws UnknownHostException, ParserConfigurationException, SAXException, IOException {
+    	this.dumpData(this.parse(input).getBuses());
     }
 }

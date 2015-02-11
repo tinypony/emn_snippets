@@ -1,13 +1,15 @@
 package edu.aalto.emn.dataobject;
 
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.onebusaway.gtfs.model.StopTime;
 import org.xml.sax.Attributes;
 
 import com.mongodb.BasicDBObject;
 
-public class Stop implements Jsonable, Mongoable {
+public class ScheduleStop implements Jsonable, Mongoable, Comparable {
 	private BusStop stop;
 	private int order;
 	private String arrival;
@@ -23,7 +25,7 @@ public class Stop implements Jsonable, Mongoable {
 		return jstop;
 	}
 	
-	public Stop(Attributes atts, Map<String, BusStop> stops) throws IllegalArgumentException {
+	public ScheduleStop(Attributes atts, Map<String, BusStop> stops) throws IllegalArgumentException {
 		this.stop = stops.get(atts.getValue("StationId"));
 		
 		if(this.stop == null) {
@@ -36,6 +38,16 @@ public class Stop implements Jsonable, Mongoable {
 		if(this.arrival == null) {
 			throw new IllegalArgumentException("Arrival was not specified");
 		}
+	}
+	
+	public ScheduleStop(StopTime st, BusStop bstop) {
+		this.stop = bstop;
+		this.order = st.getStopSequence();
+		this.arrival = this.getTime("HHmm", st.getArrivalTime());
+	}
+	
+	public ScheduleStop(){
+		
 	}
 
 	public BusStop getStop() {
@@ -66,10 +78,25 @@ public class Stop implements Jsonable, Mongoable {
 	public BasicDBObject toMongoObj() {
 		BasicDBObject jstop = new BasicDBObject();
 		jstop.append("id", this.getStop().getId())
+		.append("order", this.order)
 		.append("time", this.getArrival())
 		.append("name", this.getStop().getName())
 		.append("posX", this.getStop().getX())
 		.append("posY", this.getStop().getY());
 		return jstop;
+	}
+	
+    public String getTime(String format, int secondsFromMidnight) {
+        SimpleDateFormat df = new SimpleDateFormat(format);
+        df.setTimeZone(java.util.TimeZone.getTimeZone("GMT"));
+        
+        return df.format(secondsFromMidnight * 1000);
+    }
+
+
+	@Override
+	public int compareTo(Object arg0) {
+		ScheduleStop another = (ScheduleStop) arg0;
+		return this.order - another.getOrder();
 	}
 }

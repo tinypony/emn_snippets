@@ -24,6 +24,11 @@ public class SnippetMain {
     @Parameter(names = "-gtfs", description = "Path to GTFS database dump")
     private String gtfsPath;
     
+    @Parameter(names = "-noimport", description = "Skips data parsing and import")
+    private boolean skipParsing = false;
+    
+    private String databaseName = "ruter";
+    
 	
 	public SnippetMain() throws UnknownHostException {
 
@@ -34,27 +39,31 @@ public class SnippetMain {
     	new JCommander(snippet, args);
 
 
-    	if(snippet.xmlPath != null) {
-            try {
-                InputStream xmlInput = new FileInputStream(snippet.xmlPath);
-                HSLXmlHandler hslHandler = new HSLXmlHandler();
-                hslHandler.dumpData(hslHandler.parse(xmlInput).getBuses());
-            } catch (Throwable err) {
-                err.printStackTrace ();
-            }
-    	} else if(snippet.gtfsPath != null) {
-    	    RuterGTFSHandler ruterHandler = new RuterGTFSHandler(snippet.gtfsPath);
-    	    ruterHandler.parseAndDump();
+    	if(!snippet.skipParsing) {
+	    	if(snippet.xmlPath != null) {
+	            try {
+	                HSLXmlHandler hslHandler = new HSLXmlHandler();
+	                hslHandler.parseAndDump(new FileInputStream(snippet.xmlPath));
+	            } catch (Throwable err) {
+	                err.printStackTrace ();
+	            }
+	    	} else if(snippet.gtfsPath != null) {
+	    	    RuterGTFSHandler ruterHandler = new RuterGTFSHandler(snippet.gtfsPath);
+	    	    ruterHandler.parseAndDump();
+	    	}
+    	} else {
+    		System.out.println("Skipping import");
     	}
       
     	
-    	System.out.println();
+    	System.out.println("Resolving distances");
 		snippet.retrieveRouteLength();
         System.out.println("Done");
     }
     
     public void retrieveRouteLength() throws IOException, InterruptedException {
-    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
+    	MongoUtils.setDBName(databaseName);
+    	DBCollection coll = MongoUtils.getDB().getCollection("trips");
 		List<String> routes = this.getDistinctRoutes();
     	Iterator<String> iter = routes.iterator();
     	float i = 0;
@@ -81,7 +90,7 @@ public class SnippetMain {
       					new BasicDBObject("routeLength", lengthInMeters)
       			);
       			WriteResult result = coll.update(query, update, false, true);
-      	  		System.out.println("Entries affected: " + result.getN());
+      	  	//	System.out.println("Entries affected: " + result.getN());
     		}
     		
     		i += 1.0;
@@ -91,12 +100,12 @@ public class SnippetMain {
     
     
     public List<String> getDistinctRoutes() throws UnknownHostException {
-    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
+    	DBCollection coll = MongoUtils.getDB().getCollection("trips");
     	return coll.distinct("serviceNbr");
     }
     
     public DBObject getBus(String route) throws UnknownHostException {
-    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
+    	DBCollection coll = MongoUtils.getDB().getCollection("trips");
     	BasicDBObject query = new BasicDBObject();
     	query.append("serviceNbr", route);
     	DBObject bus = coll.findOne(query);

@@ -2,30 +2,41 @@ package edu.aalto.emn.dataobject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.onebusaway.gtfs.model.ServiceCalendarDate;
 
 import com.beust.jcommander.converters.ISO8601DateConverter;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 
-public class Bus implements Jsonable, Mongoable {
+public class BusTrip implements Jsonable, Mongoable {
 
 	private String serviceID;
 	private String serviceNbr;
-    private ArrayList<Stop> stops; //stop
+    private ArrayList<ScheduleStop> stops; //stop
     private String route;
 	private String companyId;
 	private String trnsmode;
 	private String footnoteId;
 	private String firstDate;
 	private String vector;
+	private String dataSource;
+	
+	private Object auxilliary;
 
-    public Bus() {
-        this.stops = new ArrayList<Stop>();
+    public BusTrip() {
+        this.stops = new ArrayList<ScheduleStop>();
+    }
+    
+    public BusTrip(Object aux) {
+        this();
+        this.auxilliary = aux;
     }
 
     public void setRoute(String route) {
@@ -36,11 +47,11 @@ public class Bus implements Jsonable, Mongoable {
     	return this.route;
     }
 
-    public void addStop(Stop stop) {
+    public void addStop(ScheduleStop stop) {
         this.stops.add(stop);
     }
     
-    public ArrayList<Stop> getStops() {
+    public ArrayList<ScheduleStop> getStops() {
     	return this.stops;
     }
 
@@ -77,7 +88,7 @@ public class Bus implements Jsonable, Mongoable {
     	jBus.put("route", this.getRoute());
     	JSONArray jstops = new JSONArray();
     	
-    	for(Stop stop : this.getStops()) {
+    	for(ScheduleStop stop : this.getStops()) {
     		jstops.put(stop.toJson());
     	}
     	
@@ -93,36 +104,51 @@ public class Bus implements Jsonable, Mongoable {
 	public void setTrnsmode(String trnsmode) {
 		this.trnsmode = trnsmode;
 	}
-
-	@Override
-	public BasicDBObject toMongoObj() {
-		BasicDBObject val = new BasicDBObject();
-		val.append("firstDate", this.getFirstDate());
-		val.append("vector", this.getVector());
-		
+	
+	public BasicDBList getDates() {
 		BasicDBList dates = new BasicDBList();
 		Calendar cal = Calendar.getInstance();
-		String[] tokens = firstDate.split("-");
 		
-		cal.set(Integer.parseInt(tokens[0]), 
-				Integer.parseInt(tokens[1])-1, 
-				Integer.parseInt(tokens[2])-1);
-		
-		
-		for(int i =0; i < this.getVector().length(); i++) {
-			char a = this.getVector().charAt(i);
-			if(a == '1') {
-				cal.set(Integer.parseInt(tokens[0]), 
-						Integer.parseInt(tokens[1])-1, 
-						Integer.parseInt(tokens[2]));
-				cal.add(Calendar.DATE, i);
-				dates.add(cal.get(Calendar.YEAR) + "-" 
-				+ (cal.get(Calendar.MONTH)+1) + "-" 
-				+ cal.get(Calendar.DATE));
+		if(dataSource == "hsl") {
+			String[] tokens = firstDate.split("-");
+			
+			cal.set(Integer.parseInt(tokens[0]), 
+					Integer.parseInt(tokens[1])-1, 
+					Integer.parseInt(tokens[2])-1);
+			
+			
+			for(int i =0; i < this.getVector().length(); i++) {
+				char a = this.getVector().charAt(i);
+				if(a == '1') {
+					cal.set(Integer.parseInt(tokens[0]), 
+							Integer.parseInt(tokens[1])-1, 
+							Integer.parseInt(tokens[2]));
+					cal.add(Calendar.DATE, i);
+					dates.add(this.getDateString(cal));
+				}
+			}
+		} else if(dataSource == "ruter") {
+			List<ServiceCalendarDate> calDates = (List<ServiceCalendarDate>) this.auxilliary;
+			for(ServiceCalendarDate scd: calDates) {
+				cal.set(scd.getDate().getYear(), 
+				scd.getDate().getMonth()-1, 
+				scd.getDate().getDay());
+				dates.add(this.getDateString(cal));
 			}
 		}
 		
-		//val.append("dates", dates);
+		return dates;
+	}
+	
+	public String getDateString(Calendar cal) {
+		return 	cal.get(Calendar.YEAR) + "-" 
+				+ (cal.get(Calendar.MONTH)+1) + "-" 
+				+ cal.get(Calendar.DATE);
+	}
+
+	@Override
+	public BasicDBObject toMongoObj() {
+		Collections.sort(this.stops);
 		
 		BasicDBObject obj = new BasicDBObject();
     	obj.append("serviceId", this.getServiceID())
@@ -131,14 +157,14 @@ public class Bus implements Jsonable, Mongoable {
     	.append("route", this.getRoute())
     	.append("stops", this.getDBStops())
     	.append("footnodeId", this.getFootnoteId())
-    	.append("dates", dates);
+    	.append("dates", this.getDates());
     	
     	return obj;
 	}
 
 	private List<BasicDBObject> getDBStops() {
 		ArrayList<BasicDBObject> stops = new ArrayList<BasicDBObject>();
-		for(Stop stop: this.getStops()) {
+		for(ScheduleStop stop: this.getStops()) {
 			stops.add(stop.toMongoObj());
 		}
 		return stops;
@@ -166,5 +192,13 @@ public class Bus implements Jsonable, Mongoable {
 
 	public void setVector(String vector) {
 		this.vector = vector;
+	}
+
+	public String getDataSource() {
+		return dataSource;
+	}
+
+	public void setDataSource(String dataSource) {
+		this.dataSource = dataSource;
 	}
 }

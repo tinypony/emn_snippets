@@ -14,13 +14,13 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.mongodb.BasicDBObject;
 
-import edu.aalto.emn.dataobject.Bus;
+import edu.aalto.emn.dataobject.BusTrip;
 import edu.aalto.emn.dataobject.BusStop;
-import edu.aalto.emn.dataobject.Stop;
+import edu.aalto.emn.dataobject.ScheduleStop;
 
 public class DBHandler extends DefaultHandler {
 	private Map<String, BusStop> stops;
-	private ArrayList<Bus> buses;
+	private ArrayList<BusTrip> buses;
 
 	private Map<String, BasicDBObject> validityDays;
 	private List<String> allowedModes = Arrays.asList("1", "3", "4", "5", "25");
@@ -32,11 +32,11 @@ public class DBHandler extends DefaultHandler {
 
 	public DBHandler(String route, String company) {
 		this.stops = new HashMap<String, BusStop>();
-		this.buses = new ArrayList<Bus>();
+		this.buses = new ArrayList<BusTrip>();
 		this.validityDays = new HashMap<String, BasicDBObject>();
 	}
 
-	public List<Bus> getBuses() {
+	public List<BusTrip> getBuses() {
 		return this.buses;
 	}
 
@@ -87,7 +87,7 @@ public class DBHandler extends DefaultHandler {
 			
 		} else if ("service".equals(qName.toLowerCase())) {
 			
-			Bus bus = new Bus();
+			BusTrip bus = new BusTrip();
 			bus.setServiceID(attributes.getValue("ServiceId"));
 			this.objectStack.push(bus);
 			
@@ -98,28 +98,28 @@ public class DBHandler extends DefaultHandler {
 			
 			
 			if (routeNbr != null) {
-				Bus bus = (Bus) this.objectStack.peek();
+				BusTrip bus = (BusTrip) this.objectStack.peek();
 				bus.setCompany(companyId);
 				bus.setRoute(routeNbr);
 				bus.setServiceNbr(serviceNbr);
 			}
 			
 		} else if ("stop".equals(qNameLow)) {
-			Bus bus = (Bus) this.objectStack.peek();
+			BusTrip bus = (BusTrip) this.objectStack.peek();
 			
 			try {
-				Stop stop = new Stop(attributes, this.getStops());
+				ScheduleStop stop = new ScheduleStop(attributes, this.getStops());
 				bus.addStop(stop);
 			} catch(Exception e) {
 				System.out.println("Error parsing stop");
 			}
 			
 		} else if ("servicetrnsmode".equals(qNameLow)) {
-			Bus bus = (Bus) this.objectStack.peek();
+			BusTrip bus = (BusTrip) this.objectStack.peek();
 			bus.setTrnsmode(attributes.getValue("TrnsmodeId"));
 			
 		} else if("servicevalidity".equalsIgnoreCase(qName)) {
-			Bus bus = (Bus) objectStack.peek();
+			BusTrip bus = (BusTrip) objectStack.peek();
 			String footnoteid = attributes.getValue("FootnoteId");
 			bus.setFootnoteId (footnoteid);
 			BasicDBObject validity = validityDays.get(footnoteid);
@@ -135,7 +135,7 @@ public class DBHandler extends DefaultHandler {
 		String qNameLow = qName.toLowerCase();
 		
 		if ("service".equals(qNameLow)) {
-			Bus bus = (Bus) this.objectStack.pop();
+			BusTrip bus = (BusTrip) this.objectStack.pop();
 			
 			if(filter(bus)) {
 				this.buses.add(bus);
@@ -147,7 +147,7 @@ public class DBHandler extends DefaultHandler {
 		return this.validityDays;
 	}
 
-	private boolean filter(Bus bus) {
+	private boolean filter(BusTrip bus) {
 		return allowedModes.contains(bus.getTrnsmode()); //bus.getRoute().equals(this.route) && this.company.equals(bus.getCompany());
 	}
 }

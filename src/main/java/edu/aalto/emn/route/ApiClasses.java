@@ -8,7 +8,9 @@ import com.google.api.client.util.Key;
 
 public class ApiClasses {
 
-	static final String API_KEY = "AIzaSyCx3auvl9pVjodHKFHIkZcgpwe7PWcHGio";//"AIzaSyBemqldbHJLIVQzv1QhkhQyrqCyAhOeOxI";//"AIzaSyCx3auvl9pVjodHKFHIkZcgpwe7PWcHGio";
+	// "AIzaSyCx3auvl9pVjodHKFHIkZcgpwe7PWcHGio"
+	// "AIzaSyBemqldbHJLIVQzv1QhkhQyrqCyAhOeOxI"
+	static final String API_KEY = "AIzaSyBemqldbHJLIVQzv1QhkhQyrqCyAhOeOxI";
 
 	public static class DistanceUrl extends GenericUrl {
 		public DistanceUrl(String encodedUrl) {
@@ -54,7 +56,10 @@ public class ApiClasses {
 			int retval= 0;
 			
 			for(int i=0; i< rows.size(); i++) {
-				retval += this.rows.get(i).getElements().get(i).distance.value;
+				MatrixElement matEl = rows.get(i).getElements().get(i);
+				if(matEl.status.equalsIgnoreCase("OK")) {
+					retval += matEl.distance.value;
+				}
 			}
 			
 			return retval;
@@ -77,6 +82,9 @@ public class ApiClasses {
 	}
 
 	public static class MatrixElement {
+		@Key
+		private String status;
+		
 		@Key
 		private IntTextPair duration;
 

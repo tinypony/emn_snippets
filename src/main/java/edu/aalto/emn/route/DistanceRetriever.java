@@ -19,7 +19,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 
 import edu.aalto.emn.MongoUtils;
-import edu.aalto.emn.dataobject.Bus;
+import edu.aalto.emn.dataobject.BusTrip;
 
 public class DistanceRetriever {
 
@@ -68,8 +68,7 @@ public class DistanceRetriever {
 	
 	public static int getRoutePartLengthOnline(List<DBObject> stops) throws IOException, IllegalStateException {
 		ApiClasses.DistanceUrl url = ApiClasses.DistanceUrl.url(getOrigins(stops), getDestinations(stops));
-		
-		url.put("fields", "items(id,url,object(content,plusoners/totalItems))");
+
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse response = request.execute();
 		ApiClasses.DestinationAPIResponse apiResponse = response.parseAs(ApiClasses.DestinationAPIResponse.class);

@@ -1,6 +1,8 @@
 package edu.aalto.emn.dataobject;
 
 import org.json.JSONObject;
+import org.onebusaway.gtfs.model.Stop;
+import org.onebusaway.gtfs.model.StopTime;
 import org.xml.sax.Attributes;
 
 
@@ -31,6 +33,13 @@ public class BusStop{
         if(y !=null) {
             this.setY(y);
         }
+    }
+    
+    public BusStop(Stop stop) {
+    	this.setId(stop.getId().getId());
+    	this.setName(stop.getName());
+    	this.setY(""+stop.getLat());
+    	this.setX(""+stop.getLon());
     }
     
     public BusStop(String id, String name, String x, String y) {
