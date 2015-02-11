@@ -1,46 +1,28 @@
 package edu.aalto.emn;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.xml.sax.SAXException;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.WriteResult;
 
 import edu.aalto.emn.route.DistanceRetriever;
 
 public class SnippetMain {
     
-    @Parameter(names = { "-route" }, description = "Route number")
-    private String route = "23";
-    
-    private String companyId = "15690";
    
-    @Parameter(names = "-xml", description = "Path to XML database dump", required=true)
-    private String path;
+    @Parameter(names = "-xml", description = "Path to XML database dump")
+    private String xmlPath;
     
-    @Parameter(names = "-out", required = true)
-    private String out;
+    @Parameter(names = "-gtfs", description = "Path to GTFS database dump")
+    private String gtfsPath;
     
 	
 	public SnippetMain() throws UnknownHostException {
@@ -52,13 +34,18 @@ public class SnippetMain {
     	new JCommander(snippet, args);
 
 
-    
-        try {
-            InputStream xmlInput = new FileInputStream(snippet.path);
-            snippet.dumpData(snippet.parse(xmlInput).getBuses());
-        } catch (Throwable err) {
-            err.printStackTrace ();
-        }
+    	if(snippet.xmlPath != null) {
+            try {
+                InputStream xmlInput = new FileInputStream(snippet.xmlPath);
+                HSLXmlHandler hslHandler = new HSLXmlHandler();
+                hslHandler.dumpData(hslHandler.parse(xmlInput).getBuses());
+            } catch (Throwable err) {
+                err.printStackTrace ();
+            }
+    	} else if(snippet.gtfsPath != null) {
+    	    RuterGTFSHandler ruterHandler = new RuterGTFSHandler(snippet.gtfsPath);
+    	    ruterHandler.parseAndDump();
+    	}
       
     	
     	System.out.println();
@@ -102,27 +89,6 @@ public class SnippetMain {
     	}
     }
     
-    public DBHandler parse(InputStream xmlInput) throws ParserConfigurationException, SAXException, IOException {
-
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-    	SAXParser saxParser = factory.newSAXParser();
-        DBHandler handler   = new DBHandler(this.route, this.companyId);
-        saxParser.parse(xmlInput, handler);
-        System.out.println("Got " + handler.getStops().keySet().size() + " stops");
-        System.out.println("Got " + handler.getBuses().size() + " buses");
-        return handler;
-    }
-    
-    
-    public void dumpData(List<Bus> buses) throws UnknownHostException {
-    	DBCollection coll = MongoUtils.getDB().getCollection("buses");
-    	coll.drop();
-    	coll = MongoUtils.getDB().getCollection("buses");
-    	
-    	for(Bus bus : buses) {
-        	coll.insert(bus.toMongoObj());
-    	}
-    }
     
     public List<String> getDistinctRoutes() throws UnknownHostException {
     	DBCollection coll = MongoUtils.getDB().getCollection("buses");

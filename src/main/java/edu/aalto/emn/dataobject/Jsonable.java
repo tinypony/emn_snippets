@@ -1,4 +1,4 @@
-package edu.aalto.emn;
+package edu.aalto.emn.dataobject;
 
 import org.json.JSONObject;
 

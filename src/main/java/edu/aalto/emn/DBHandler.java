@@ -14,6 +14,10 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.mongodb.BasicDBObject;
 
+import edu.aalto.emn.dataobject.Bus;
+import edu.aalto.emn.dataobject.BusStop;
+import edu.aalto.emn.dataobject.Stop;
+
 public class DBHandler extends DefaultHandler {
 	private Map<String, BusStop> stops;
 	private ArrayList<Bus> buses;

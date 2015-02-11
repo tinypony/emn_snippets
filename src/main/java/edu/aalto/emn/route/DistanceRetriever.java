@@ -18,8 +18,8 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 
-import edu.aalto.emn.Bus;
 import edu.aalto.emn.MongoUtils;
+import edu.aalto.emn.dataobject.Bus;
 
 public class DistanceRetriever {
 
