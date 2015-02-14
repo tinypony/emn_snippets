@@ -108,6 +108,7 @@ public class RuterGTFSHandler {
             bus.setFootnoteId(t.getServiceId().getId()); //references service id in calendar dates
             bus.setRoute(t.getRoute().getShortName());
             bus.setServiceNbr(t.getRoute().getId().getId());
+            bus.setDirection(t.getDirectionId());
             trips.put(tripId, bus);
         }
 	}

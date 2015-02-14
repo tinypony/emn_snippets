@@ -27,6 +27,7 @@ public class BusTrip implements Jsonable, Mongoable {
 	private String firstDate;
 	private String vector;
 	private String dataSource;
+	private String direction;
 	
 	private Object auxilliary;
 
@@ -200,5 +201,13 @@ public class BusTrip implements Jsonable, Mongoable {
 
 	public void setDataSource(String dataSource) {
 		this.dataSource = dataSource;
+	}
+
+	public String getDirection() {
+		return direction;
+	}
+
+	public void setDirection(String direction) {
+		this.direction = direction;
 	}
 }

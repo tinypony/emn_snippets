@@ -27,6 +27,9 @@ public class SnippetMain {
     @Parameter(names = "-noimport", description = "Skips data parsing and import")
     private boolean skipParsing = false;
     
+    @Parameter(names = "-nodistance", description = "Skips distance calculation")
+    private boolean skipDistance = false;
+    
     private String databaseName = "ruter";
     
 	
@@ -55,9 +58,11 @@ public class SnippetMain {
     		System.out.println("Skipping import");
     	}
       
-    	
-    	System.out.println("Resolving distances");
-		snippet.retrieveRouteLength();
+    	if(!snippet.skipDistance) {
+        	System.out.println("Resolving distances");
+    		snippet.retrieveRouteLength();
+    	}
+
         System.out.println("Done");
     }
     
