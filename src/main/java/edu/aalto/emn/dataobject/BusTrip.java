@@ -153,9 +153,10 @@ public class BusTrip implements Jsonable, Mongoable {
 		
 		BasicDBObject obj = new BasicDBObject();
     	obj.append("serviceId", this.getServiceID())
+    	.append("direction", this.getDirection())
     	.append("companyId", this.getCompany())
+        .append("route", this.getRoute())
     	.append("serviceNbr", this.getServiceNbr())
-    	.append("route", this.getRoute())
     	.append("stops", this.getDBStops())
     	.append("footnodeId", this.getFootnoteId())
     	.append("dates", this.getDates());

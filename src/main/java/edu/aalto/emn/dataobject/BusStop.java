@@ -6,7 +6,7 @@ import org.onebusaway.gtfs.model.StopTime;
 import org.xml.sax.Attributes;
 
 
-public class BusStop{
+public class BusStop {
     private String id;
     private String name;
     private String x;

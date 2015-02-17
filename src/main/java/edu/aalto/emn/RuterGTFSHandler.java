@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.onebusaway.csv_entities.EntityHandler;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
@@ -64,11 +65,16 @@ public class RuterGTFSHandler {
         this.processTrips();
         this.processStops();
         
-
-        for(String tripId: trips.keySet()) {
+        Set<String> keySet = trips.keySet();
+        int i=0;
+        
+        for(String tripId: keySet) {
         	BusTrip trip = trips.get(tripId);
         	tripsColl.insert(trip.toMongoObj());
+        	i++;
+        	System.out.println("Imported " + i + " trips out of "+keySet.size() + " \r");
         }
+        
         System.out.println("Imported " + trips.size() + " bus trips");
     }
 
